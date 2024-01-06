@@ -1,6 +1,5 @@
 runtime: go120
-api_version: go1
 env: standard
 handlers:
     - url: /.*
-      script: _go_app
+      script: auto
