@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"time"
+	"time"	
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/ARKNravi/HACKFEST-BE/model"
 	"github.com/ARKNravi/HACKFEST-BE/repository"
 	"github.com/dgrijalva/jwt-go"
@@ -24,10 +26,15 @@ var (
 )
 
 func init() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("failed to load .env file:", err)
+	}
+
 	googleOauthConfig = &oauth2.Config{
-		ClientID:     "344279870854-of855mekimllk6p0unrif7s6tp0984tn.apps.googleusercontent.com",
-		ClientSecret: "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",
-		RedirectURL:  "http://localhost:8080/auth/google/callback",
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://accounts.google.com/o/oauth2/auth",
@@ -78,7 +85,7 @@ func (UserController) Register(c *gin.Context) {
 		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("hackfestbe"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
 		return
@@ -94,13 +101,18 @@ func generateVerificationCode() string {
 
 
 func sendVerificationEmail(email string, code string) error {
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("failed to load .env file: %v", err)
+	}
+
 	m := gomail.NewMessage()
-	m.SetHeader("From", "anandaravik@gmail.com")
+	m.SetHeader("From", os.Getenv("EMAIL"))
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Email Verification")
 	m.SetBody("text/html", "Your verification code is: "+code)
 
-	d := gomail.NewDialer("smtp.gmail.com", 587, "anandaravik@gmail.com", "tswm utat rhgt fqcy")
+	d := gomail.NewDialer("smtp.gmail.com", 587, os.Getenv("EMAIL"), os.Getenv("EMAIL_PASSWORD"))
 
 	if err := d.DialAndSend(m); err != nil {
 		return err
@@ -135,7 +147,7 @@ func (UserController) Login(c *gin.Context) {
 		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	tokenString, err := token.SignedString([]byte("hackfestbe"))
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
 		return
@@ -188,7 +200,7 @@ func (UserController) GoogleCallback(c *gin.Context) {
 		"exp":    time.Now().Add(time.Hour * 72).Unix(),
 	})
 
-	tokenString, err := jwtToken.SignedString([]byte("hackfestbe"))
+	tokenString, err := jwtToken.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -348,7 +360,7 @@ func (UserController) ShowProfile(c *gin.Context) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte("hackfestbe"), nil
+		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 
 	if err != nil {

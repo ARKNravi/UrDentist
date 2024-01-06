@@ -3,11 +3,20 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"strings"
+	"strings"	
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("failed to load .env file:", err)
+	}
+}
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -25,7 +34,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
-			return []byte("hackfestbe"), nil
+			return []byte(os.Getenv("SECRET_KEY")), nil
 		})
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
