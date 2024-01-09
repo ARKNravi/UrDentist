@@ -128,17 +128,6 @@ func (UserController) Verify(c *gin.Context) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": user.ID,
-		"exp":    time.Now().Add(time.Hour * 72).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating token"})
-		return
-	}
-
 	userResponse := UserResponse{
 		ID:            user.ID,
 		FullName:      user.FullName,
@@ -147,12 +136,12 @@ func (UserController) Verify(c *gin.Context) {
 		IsVerified:    user.IsVerified,
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "User verified successfully!", "user": userResponse, "token": tokenString})
+	c.JSON(http.StatusOK, gin.H{"status": "User verified successfully!", "user": userResponse})
 }
 
-
 func generateVerificationCode() string {
-	rand.Seed(time.Now().UnixNano())
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	rand.Seed(time.Now().In(loc).UnixNano())
 	return fmt.Sprintf("%04d", rand.Intn(10000)) // generates a random number between 0 and 9999
 }
 
@@ -198,10 +187,10 @@ func (UserController) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}
-
+	loc, _ := time.LoadLocation("Asia/Jakarta")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": user.ID,
-		"exp":    time.Now().Add(time.Hour * 72).Unix(),
+		"exp":    time.Now().In(loc).Add(time.Hour * 72).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
@@ -251,10 +240,10 @@ func (UserController) GoogleCallback(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-
+	loc, _ := time.LoadLocation("Asia/Jakarta")
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": user.ID,
-		"exp":    time.Now().Add(time.Hour * 72).Unix(),
+		"exp":    time.Now().In(loc).Add(time.Hour * 72).Unix(),
 	})
 
 	tokenString, err := jwtToken.SignedString([]byte("your-secret-key"))
@@ -340,10 +329,10 @@ func (UserController) VerifyToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid verification code"})
 		return
 	}
-
+	loc, _ := time.LoadLocation("Asia/Jakarta")
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email": foundUser.EmailAddress,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"exp":   time.Now().In(loc).Add(time.Hour * 72).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY_PASSWORD")))

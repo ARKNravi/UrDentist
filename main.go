@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	err = db.AutoMigrate(&model.User{}, &model.TempUser{})
+	err = db.AutoMigrate(&model.User{}, &model.TempUser{}, &model.Profile{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
@@ -36,12 +36,14 @@ func main() {
 	})
 
 	routes.UserRoutes(r)
+	routes.ProfileRoutes(r)	
 
 	c := cron.New()
 	_, err = c.AddFunc("@every 1m", func() {
-		tenMinutesAgo := time.Now().Add(-10 * time.Minute)
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		tenMinutesAgo := time.Now().In(loc).Add(-10 * time.Minute)
 		controller.DeleteUnverifiedUsers(tenMinutesAgo)
-	})
+	})	
 	if err != nil {
 		log.Fatal("Error scheduling DeleteUnverifiedUsers job:", err)
 	}

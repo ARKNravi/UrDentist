@@ -17,7 +17,6 @@ func UserRoutes(route *gin.Engine) {
 	route.POST("/forgot-password", userController.ForgotPassword)
 	route.POST("/verify-token", userController.VerifyToken)
 	route.POST("/reset-password", middleware.AuthMiddlewarePassword(), userController.ResetPassword)
-	route.POST("/profile", middleware.AuthMiddleware(), userController.ShowProfile)
 }
 
 

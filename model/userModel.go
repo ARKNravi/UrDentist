@@ -13,4 +13,5 @@ type User struct {
 	ConfirmPassword string `gorm:"-"`
 	VerificationCode string `gorm:"type:char(4);not null"`
 	IsVerified      bool   `gorm:"type:boolean"`
+	Profiles []Profile `gorm:"foreignKey:UserID"`
 }
