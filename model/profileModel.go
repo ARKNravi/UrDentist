@@ -16,6 +16,8 @@ type Profile struct {
 	Alamat          string `gorm:"type:varchar(255);not null"`
 	Alergi          string `gorm:"type:varchar(255)"`
 	User            User   `gorm:"foreignKey:UserID"`
+	Ratings         []Rating `gorm:"foreignKey:ProfileID"`
+	Questions       []Question `gorm:"foreignKey:ProfileID"`
 }
 
 func (p *Profile) UnmarshalJSON(b []byte) error {

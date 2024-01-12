@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	err = db.AutoMigrate(&model.User{}, &model.TempUser{}, &model.Profile{}, &model.Task{}, &model.TaskCompletion{})
+	err = db.AutoMigrate(&model.User{}, &model.TempUser{}, &model.Profile{}, &model.Task{}, &model.TaskCompletion{}, &model.Dentist{},&model.Appointment{}, &model.OfflineConsultation{}, &model.OnlineConsultation{}, &model.Rating{}, &model.Question{})
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
 	}
@@ -38,6 +38,8 @@ func main() {
 	routes.UserRoutes(r)
 	routes.ProfileRoutes(r)	
 	routes.TaskRoutes(r)
+	routes.DentistRoutes(r)
+	routes.QuestionRoutes(r)
 
 	c := cron.New()
 	_, err = c.AddFunc("@every 1m", func() {
