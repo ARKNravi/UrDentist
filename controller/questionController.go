@@ -54,3 +54,28 @@ func GetQuestionByID(c *gin.Context) {
 	}
 	c.JSON(200, question)
 }
+
+func AnswerQuestion(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	dentistID, err := strconv.Atoi(c.Param("dentistID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid dentist ID"})
+		return
+	}
+	var question model.Question
+	if err := c.ShouldBindJSON(&question); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	repo := repository.NewQuestionRepository()
+	err = repo.AnswerQuestion(uint(id), question.Answer, uint(dentistID))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Question answered successfully"})
+}

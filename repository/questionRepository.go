@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/ARKNravi/HACKFEST-BE/database"
 	"github.com/ARKNravi/HACKFEST-BE/model"
 )
@@ -38,4 +40,22 @@ func (r *QuestionRepository) GetQuestionByID(id uint) (*model.Question, error) {
 	var question model.Question
 	result := db.First(&question, id)
 	return &question, result.Error
+}
+
+func (r *QuestionRepository) AnswerQuestion(id uint, answer string, dentistID uint) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	var question model.Question
+	result := db.First(&question, id)
+	if result.Error != nil {
+		return result.Error
+	}
+	now := time.Now()
+	question.Answer = answer
+	question.DentistID = &dentistID
+	question.AnsweredAt = &now
+	result = db.Model(&question).Updates(model.Question{Answer: answer, DentistID: &dentistID, AnsweredAt: &now})
+	return result.Error
 }
