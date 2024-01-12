@@ -30,7 +30,7 @@ func FindOrCreateUserByEmail(user *model.User) error {
 		return err
 	}
 
-	if err := db.Where("email_address = ?", user.EmailAddress).FirstOrCreate(&user).Error; err != nil {
+	if err := db.Where("email_address = ?", user.EmailAddress).First(&user).Error; err != nil {
 		return err
 	}
 

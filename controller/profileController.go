@@ -37,7 +37,7 @@ func GetAllProfiles(c *gin.Context) {
 }
 
 func GetProfile(c *gin.Context) {
-    id := c.Param("id")
+    id := c.Param("profileID")
     idUint, err := strconv.ParseUint(id, 10, 32)
     if err != nil {
         c.JSON(400, gin.H{"error": "Invalid profile ID"})
@@ -53,7 +53,7 @@ func GetProfile(c *gin.Context) {
 }
 
 func UpdateProfile(c *gin.Context) {
-    id := c.Param("id")
+    id := c.Param("profileID")
     idUint, err := strconv.ParseUint(id, 10, 32)
     if err != nil {
         c.JSON(400, gin.H{"error": "Invalid profile ID"})
@@ -74,7 +74,7 @@ func UpdateProfile(c *gin.Context) {
 }
 
 func DeleteProfile(c *gin.Context) {
-    id := c.Param("id")
+    id := c.Param("profileID")
     idUint, err := strconv.ParseUint(id, 10, 32)
     if err != nil {
         c.JSON(400, gin.H{"error": "Invalid profile ID"})

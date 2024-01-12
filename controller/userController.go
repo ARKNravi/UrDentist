@@ -246,7 +246,7 @@ func (UserController) GoogleCallback(c *gin.Context) {
 		"exp":    time.Now().In(loc).Add(time.Hour * 72).Unix(),
 	})
 
-	tokenString, err := jwtToken.SignedString([]byte("your-secret-key"))
+	tokenString, err := jwtToken.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return

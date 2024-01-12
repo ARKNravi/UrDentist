@@ -9,7 +9,7 @@ import (
 func ProfileRoutes(r *gin.Engine) {
 	r.POST("/profile", middleware.AuthMiddleware(), controller.CreateProfile)
 	r.GET("/profile", middleware.AuthMiddleware(), controller.GetAllProfiles)
-	r.GET("/profile/:id", middleware.AuthMiddleware(), controller.GetProfile)
-	r.PUT("/profile/:id", middleware.AuthMiddleware(), controller.UpdateProfile)
-	r.DELETE("/profile/:id", middleware.AuthMiddleware(), controller.DeleteProfile)
+	r.GET("/profile/:profileID", middleware.AuthMiddleware(), controller.GetProfile)
+	r.PUT("/profile/:profileID", middleware.AuthMiddleware(), controller.UpdateProfile)
+	r.DELETE("/profile/:profileID", middleware.AuthMiddleware(), controller.DeleteProfile)
 }
