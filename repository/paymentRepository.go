@@ -8,7 +8,6 @@ import (
 )
 
 type PaymentRepository interface {
-	Save(payment *model.Payment) error
 	Update(payment *model.Payment) error
 }
 
@@ -24,10 +23,6 @@ func NewPaymentRepository() (PaymentRepository, error) {
 	return &paymentRepository{db: db}, nil
 }
 
-func (r *paymentRepository) Save(payment *model.Payment) error {
-	return r.db.Create(payment).Error
-}
-
 func (r *paymentRepository) Update(payment *model.Payment) error {
-	return r.db.Save(payment).Error
+	return r.db.Model(payment).Updates(payment).Error
 }

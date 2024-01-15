@@ -9,6 +9,6 @@ type Payment struct {
 	Amount       float32 `gorm:"not null"`
 	Status       bool    `gorm:"not null"`
 	Method       string  `gorm:"type:varchar(100)"` 
-	Photo        string  `gorm:"type:varchar(255)"` 
+	Photo        string  `gorm:"type:varchar(1024)"` 
 	AppointmentID uint
 }

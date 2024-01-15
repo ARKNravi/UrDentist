@@ -41,6 +41,7 @@ func main() {
 	routes.DentistRoutes(r)
 	routes.QuestionRoutes(r)
 	routes.AppointmentRoutes(r)
+	routes.PaymentRoutes(r)
 
 	c := cron.New()
 	_, err = c.AddFunc("@every 1m", func() {

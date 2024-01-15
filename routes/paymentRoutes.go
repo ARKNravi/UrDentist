@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/ARKNravi/HACKFEST-BE/controller"
+	"github.com/ARKNravi/HACKFEST-BE/middleware"
 	"github.com/ARKNravi/HACKFEST-BE/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -17,5 +18,5 @@ func PaymentRoutes(r *gin.Engine) {
 
 	controller := controller.NewPaymentController(repo)
 
-	r.PUT("/payments/:paymentID", controller.UpdatePayment)
+	r.PUT("/payments/:paymentID", middleware.AuthMiddleware(), controller.UpdatePayment)
 }
