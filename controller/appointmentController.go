@@ -87,9 +87,21 @@ func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 	}
 
 	if err := c.repo.Save(&appointment); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save the appointment: %v", err)})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the appointment"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"appointment": appointment})
+	payment := model.Payment{
+		Amount:        appointment.TotalPrice * 1.05, 
+		Status:        false,         
+		Method:        "",         
+		AppointmentID: appointment.ID, 
+	}
+
+	if err := c.repo.SavePayment(&payment); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the payment"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"appointment": appointment, "payment": payment})
 }

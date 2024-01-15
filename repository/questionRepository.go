@@ -13,6 +13,16 @@ func NewQuestionRepository() *QuestionRepository {
 	return &QuestionRepository{}
 }
 
+func (r *ProfileRepository) GetProfileByID(id uint) (*model.Profile, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	var profile model.Profile
+	result := db.First(&profile, id)
+	return &profile, result.Error
+}
+
 func (r *QuestionRepository) CreateQuestion(question *model.Question) error {
 	db, err := database.Connect()
 	if err != nil {

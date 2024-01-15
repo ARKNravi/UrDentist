@@ -37,6 +37,17 @@ func GetAllQuestions(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+
+	profileRepo := repository.NewProfileRepository()
+	for i, question := range questions {
+		profile, err := profileRepo.GetProfileByID(question.ProfileID)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		questions[i].NamaLengkap = profile.NamaLengkap
+	}
+
 	c.JSON(200, questions)
 }
 
@@ -52,6 +63,15 @@ func GetQuestionByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+
+	profileRepo := repository.NewProfileRepository()
+	profile, err := profileRepo.GetProfileByID(question.ProfileID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	question.NamaLengkap = profile.NamaLengkap
 	c.JSON(200, question)
 }
 

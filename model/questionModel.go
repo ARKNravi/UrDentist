@@ -14,5 +14,6 @@ type Question struct {
 	AnsweredAt  *time.Time
 	ProfileID   uint
 	DentistID   *uint
+	NamaLengkap string  `gorm:"-"`
 }
 

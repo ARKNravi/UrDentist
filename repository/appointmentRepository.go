@@ -9,6 +9,7 @@ import (
 
 type AppointmentRepository interface {
 	Save(appointment *model.Appointment) error
+	SavePayment(payment *model.Payment) error
 	GetProfile(profile *model.Profile, profileID int) error
 	GetOnlineConsultation(consultation *model.OnlineConsultation, consultationID int) error
 	GetOfflineConsultation(consultation *model.OfflineConsultation, consultationID int) error
@@ -40,4 +41,8 @@ func (r *appointmentRepository) GetOnlineConsultation(consultation *model.Online
 
 func (r *appointmentRepository) GetOfflineConsultation(consultation *model.OfflineConsultation, consultationID int) error {
 	return r.db.First(consultation, consultationID).Error
+}
+
+func (r *appointmentRepository) SavePayment(payment *model.Payment) error {
+	return r.db.Create(payment).Error
 }
