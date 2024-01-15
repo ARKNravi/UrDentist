@@ -46,5 +46,21 @@ func GetDentistByID(c *gin.Context) {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
+
+	offlineRepo := repository.NewOfflineConsultationRepository()
+	onlineRepo := repository.NewOnlineConsultationRepository()
+	offlineConsultations, err := offlineRepo.GetOfflineConsultationsByDentistID(dentist.ID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	onlineConsultations, err := onlineRepo.GetOnlineConsultationsByDentistID(dentist.ID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	dentist.OfflineConsultations = offlineConsultations
+	dentist.OnlineConsultations = onlineConsultations
 	c.JSON(200, dentist)
 }

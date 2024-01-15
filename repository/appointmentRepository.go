@@ -46,3 +46,35 @@ func (r *appointmentRepository) GetOfflineConsultation(consultation *model.Offli
 func (r *appointmentRepository) SavePayment(payment *model.Payment) error {
 	return r.db.Create(payment).Error
 }
+
+type OfflineConsultationRepository struct {}
+
+func NewOfflineConsultationRepository() *OfflineConsultationRepository {
+	return &OfflineConsultationRepository{}
+}
+
+func (r *OfflineConsultationRepository) GetOfflineConsultationsByDentistID(dentistID uint) ([]model.OfflineConsultation, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	var consultations []model.OfflineConsultation
+	result := db.Where("dentist_id = ?", dentistID).Find(&consultations)
+	return consultations, result.Error
+}
+
+type OnlineConsultationRepository struct {}
+
+func NewOnlineConsultationRepository() *OnlineConsultationRepository {
+	return &OnlineConsultationRepository{}
+}
+
+func (r *OnlineConsultationRepository) GetOnlineConsultationsByDentistID(dentistID uint) ([]model.OnlineConsultation, error) {
+	db, err := database.Connect()
+	if err != nil {
+		return nil, err
+	}
+	var consultations []model.OnlineConsultation
+	result := db.Where("dentist_id = ?", dentistID).Find(&consultations)
+	return consultations, result.Error
+}
