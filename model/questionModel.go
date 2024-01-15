@@ -15,3 +15,4 @@ type Question struct {
 	ProfileID   uint
 	DentistID   *uint
 }
+

@@ -59,3 +59,13 @@ func (r *QuestionRepository) AnswerQuestion(id uint, answer string, dentistID ui
 	result = db.Model(&question).Updates(model.Question{Answer: answer, DentistID: &dentistID, AnsweredAt: &now})
 	return result.Error
 }
+
+func (r *QuestionRepository) DeleteQuestion(id uint) error {
+	db, err := database.Connect()
+	if err != nil {
+		return err
+	}
+	var question model.Question
+	result := db.Delete(&question, id)
+	return result.Error
+}

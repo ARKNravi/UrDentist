@@ -58,7 +58,6 @@ func GetTasksByDate(c *gin.Context) {
         return
     }
 
-    // Prepare the response
     var response []map[string]interface{}
     for _, task := range tasks {
         item := map[string]interface{}{
@@ -67,8 +66,8 @@ func GetTasksByDate(c *gin.Context) {
             "Bulan":      task.Date.Month(),
             "Tanggal":    task.Date.Day(),
             "Tahun":      task.Date.Year(),
-            "Completed":  task.Completed,
             "Nama":  task.Task.Name,
+            "Status": task.Completed,
         }
         response = append(response, item)
     }

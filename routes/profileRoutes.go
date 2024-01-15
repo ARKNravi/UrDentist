@@ -11,5 +11,5 @@ func ProfileRoutes(r *gin.Engine) {
 	r.GET("/profile", middleware.AuthMiddleware(), controller.GetAllProfiles)
 	r.GET("/profile/:profileID", middleware.AuthMiddleware(), controller.GetProfile)
 	r.PUT("/profile/:profileID", middleware.AuthMiddleware(), controller.UpdateProfile)
-	r.DELETE("/profile/:profileID", middleware.AuthMiddleware(), controller.DeleteProfile)
+	r.DELETE("/profile/:profileID",  controller.DeleteProfile)
 }

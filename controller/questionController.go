@@ -79,3 +79,18 @@ func AnswerQuestion(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"message": "Question answered successfully"})
 }
+
+func DeleteQuestion(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	repo := repository.NewQuestionRepository()
+	err = repo.DeleteQuestion(uint(id))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"message": "Question deleted successfully"})
+}

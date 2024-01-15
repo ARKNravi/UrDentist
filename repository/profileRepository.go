@@ -20,13 +20,13 @@ func (r *ProfileRepository) CreateProfile(profile *model.Profile) error {
     return result.Error
 }
 
-func (r *ProfileRepository) GetAllProfiles() ([]model.Profile, error) {
+func (r *ProfileRepository) GetProfilesByUserID(userID uint) ([]model.Profile, error) {
     db, err := database.Connect()
     if err != nil {
         return nil, err
     }
     var profiles []model.Profile
-    result := db.Preload("User").Find(&profiles)
+    result := db.Preload("User").Where("user_id = ?", userID).Find(&profiles)
     return profiles, result.Error
 }
 

@@ -11,4 +11,6 @@ func QuestionRoutes(r *gin.Engine) {
 	r.GET("/questions", middleware.AuthMiddleware(), controller.GetAllQuestions)
 	r.GET("/question/:id", middleware.AuthMiddleware(), controller.GetQuestionByID)
 	r.PUT("/dentist/:dentistID/question/:id/answer", middleware.AuthMiddleware(), controller.AnswerQuestion)
+	r.DELETE("/question/:id", middleware.AuthMiddleware(), controller.DeleteQuestion)
 }
+

@@ -27,8 +27,9 @@ func CreateProfile(c *gin.Context) {
 }
 
 func GetAllProfiles(c *gin.Context) {
+    userID := uint(c.MustGet("userID").(float64))
     repo := repository.NewProfileRepository()
-    profiles, err := repo.GetAllProfiles()
+    profiles, err := repo.GetProfilesByUserID(userID)
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
