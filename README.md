@@ -27,8 +27,6 @@ List all the Tech Stack we use to build the system in this this project.
 - [FrontEnd](https://github.com/AhmadSultanMA/UrDentist)
 - [BackEnd](https://github.com/ARKNravi/hackfest-be)
 
-_Note : We provide more detail explanation (Include the **Screenshot**) in our FrontEnd and BackEnd Repository, So Please to check it._
-
 ### 📁 File Structure
 
 Here is our File Structure
