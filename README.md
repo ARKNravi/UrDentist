@@ -27,6 +27,13 @@ List all the Tech Stack we use to build the system in this this project.
 - [FrontEnd](https://github.com/AhmadSultanMA/UrDentist)
 - [BackEnd](https://github.com/ARKNravi/hackfest-be)
 
+### 📷 API & Database Specification
+
+You can just look at the `Docs` folder to check Our `API-Specification` and `Database-Specificasion`
+Here is the link
+
+1. [API-Specification](https://github.com/ARKNravi/hackfest-be/blob/main/api_urdentist.md)
+
 ### 📁 File Structure
 
 Here is our File Structure
