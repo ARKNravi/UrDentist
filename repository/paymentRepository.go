@@ -26,3 +26,4 @@ func NewPaymentRepository() (PaymentRepository, error) {
 func (r *paymentRepository) Update(payment *model.Payment) error {
 	return r.db.Model(payment).Updates(payment).Error
 }
+

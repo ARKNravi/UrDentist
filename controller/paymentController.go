@@ -1,4 +1,3 @@
-// controller/paymentController.go
 package controller
 
 import (

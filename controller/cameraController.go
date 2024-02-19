@@ -5,118 +5,143 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"os"
+	"strings"
 )
 
-type VertexAIResponse struct {
-	Predictions []struct {
-		Classes []string `json:"classes"`
-	} `json:"predictions"`
+type RequestBody struct {
+	Contents struct {
+		Role  string  `json:"role"`
+		Parts []*Part `json:"parts"`
+	} `json:"contents"`
+	SafetySettings struct {
+		Category  string `json:"category"`
+		Threshold string `json:"threshold"`
+	} `json:"safety_settings"`
+	GenerationConfig struct {
+		Temperature     float64 `json:"temperature"`
+		TopP            float64 `json:"topP"`
+		TopK            int     `json:"topK"`
+		MaxOutputTokens int     `json:"maxOutputTokens"`
+	} `json:"generation_config"`
 }
 
-type Response struct {
-	Classification string `json:"classification"`
+type Part struct {
+	FileData *struct {
+		MimeType string `json:"mimeType"`
+		FileURI  string `json:"fileUri"`
+	} `json:"fileData,omitempty"`
+	Text string `json:"text,omitempty"`
 }
 
-func UploadHandler(c *gin.Context) {
-	// Parse the multipart form
-	err := c.Request.ParseMultipartForm(10 << 20)
+
+func HandleUpload(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20)
+
+	file, handler, err := r.FormFile("myFile")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	if _, err := os.Stat("temp-images"); os.IsNotExist(err) {
+		os.Mkdir("temp-images", 0755)
+	}
+
+	fileName := handler.Filename
+
+	tempFile, err := os.Create("temp-images/" + fileName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	tempFile.Write(fileBytes)
+
+	_, err = uploadToGCS(fileBytes, tempFile.Name())
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	// Retrieve the file from form data
-	file, err := c.FormFile("image")
+	gcsURI := fmt.Sprintf("gs://supple-hulling-408914.appspot.com/%s", strings.ReplaceAll(tempFile.Name(), "\\", "/"))
+
+	reqBody := &RequestBody{}
+	reqBody.Contents.Role = "user"
+	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
+		FileData: &struct {
+			MimeType string `json:"mimeType"`
+			FileURI  string `json:"fileUri"`
+		}{
+			MimeType: "image/png",
+			FileURI:  gcsURI,
+		},
+	})
+
+	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
+		Text: "I have had toothache in my right rear molar since yesterday. The pain feels like aching and throbbing, especially when I eat or drink something cold or hot. The pain also spread to my ears and jaw. When I checked my teeth, I found that there was a small hole in the affected part of the tooth. The hole measures about 1 millimeter.", 
+	})
+
+	fmt.Print(gcsURI)
+
+	reqBody.SafetySettings.Category = "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+	reqBody.SafetySettings.Threshold = "BLOCK_LOW_AND_ABOVE"
+	reqBody.GenerationConfig.Temperature = 0.4
+	reqBody.GenerationConfig.TopP = 1.0
+	reqBody.GenerationConfig.TopK = 32
+	reqBody.GenerationConfig.MaxOutputTokens = 2048
+
+	jsonReqBody, err := json.Marshal(reqBody)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err)
 		return
 	}
-
-	// Open the file
-	openedFile, err := file.Open()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	defer openedFile.Close()
-
-	// Read the file into a byte array
-	fileBytes, err := ioutil.ReadAll(openedFile)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	vertexAIResponse, err := SendToVertexAI(fileBytes)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Check that Predictions and Classes are not empty
-	if len(vertexAIResponse.Predictions) > 0 && len(vertexAIResponse.Predictions[0].Classes) > 0 {
-		// Create the response
-		response := Response{
-			Classification: vertexAIResponse.Predictions[0].Classes[0],
-		}
-
-		// Convert the response to JSON
-		responseJSON, err := json.Marshal(response)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Write the response
-		c.Data(http.StatusOK, "application/json", responseJSON)
-		fmt.Println(vertexAIResponse)
-	} else {
-		c.JSON(http.StatusOK, gin.H{"message": "No predictions returned by the model"})
-		fmt.Println(vertexAIResponse)
-
-	}
-}
-
-func SendToVertexAI(image []byte) (*VertexAIResponse, error) {
-	// Create a new POST request
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "image.jpg")
-	if err != nil {
-		return nil, err
-	}
-	part.Write(image)
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("POST", "https://vertexai.googleapis.com/v1/projects/supple-hulling-408914/locations/us-central1/endpoints/2073461226683236352:predict", body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{}
-	res, err := client.Do(req)
+
+	req, err := http.NewRequest("POST", "https://us-central1-aiplatform.googleapis.com/v1/projects/supple-hulling-408914/locations/us-central1/publishers/google/models/gemini-1.0-pro-vision:streamGenerateContent", bytes.NewBuffer(jsonReqBody))
 	if err != nil {
-		return nil, err
+		fmt.Println(err)
+		return
 	}
-	defer res.Body.Close()
 
-	// Log the status code and body of the response
-	fmt.Println("Status code:", res.StatusCode)
-	bodyBytes, _ := ioutil.ReadAll(res.Body)
-	fmt.Println("Body:", string(bodyBytes))
+	req.Header.Set("Authorization", "Bearer ya29.a0AfB_byBQOYsDF0TlyLJWuGXSflIlnBi8OEKnWEJQZv5Mdomg2c0PBolM48Gf-46Q2NNtzcoZQFfr3V3wQ1vqfe4IPw4B410QBAlArXCZ1F8N9NylKM6zX38wER4IPMJeuv_MojqDeCldtFeuCuiuXbEwgnsuuQ6cD0g6FxCD7ddYaCgYKAdoSARESFQHGX2Mit1RTvd5uAdngT2Vs45JN1Q0179")
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	// Parse the response
-	vertexAIResponse := &VertexAIResponse{}
-	json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(vertexAIResponse)
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer resp.Body.Close()
 
-	return vertexAIResponse, nil
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+jsonResponse := make([]interface{}, 0)
+
+err = json.Unmarshal(body, &jsonResponse)
+if err != nil {
+    fmt.Println(err)
+    return
 }
+w.Header().Set("Content-Type", "application/json")
+json.NewEncoder(w).Encode(jsonResponse)
 
+}

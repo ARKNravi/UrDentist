@@ -173,7 +173,6 @@ func GetCompletedTasks(c *gin.Context) {
         endOfJune = endOfJune.AddDate(1, 0, 0)
     }
 
-    // Convert the map to a slice for consistent ordering
     var resultData []map[string]interface{}
     for period, data := range taskData {
         entry := make(map[string]interface{})
