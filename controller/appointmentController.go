@@ -22,6 +22,49 @@ func NewAppointmentController() (*AppointmentController, error) {
 	return &AppointmentController{repo: repo}, nil
 }
 
+func (c *AppointmentController) GetAppointment(ctx *gin.Context) {
+	profileID, err := strconv.Atoi(ctx.Param("profileID"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile ID"})
+		return
+	}
+
+	appointmentID, err := strconv.Atoi(ctx.Param("appointmentID"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appointment ID"})
+		return
+	}
+
+	var appointment model.Appointment
+	if err := c.repo.Get(&appointment, appointmentID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get the appointment"})
+		return
+	}
+
+	if appointment.ProfileID != uint(profileID) {
+		ctx.JSON(http.StatusForbidden, gin.H{"error": "Profile ID does not match the appointment"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"appointment": appointment})
+}
+
+func (c *AppointmentController) GetAllAppointments(ctx *gin.Context) {
+	profileID, err := strconv.Atoi(ctx.Param("profileID"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile ID"})
+		return
+	}
+
+	var appointments []model.Appointment
+	if err := c.repo.GetAll(&appointments, profileID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get all appointments"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"appointments": appointments})
+}
+
 func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 	profileID, err := strconv.Atoi(ctx.Param("profileID"))
 	if err != nil {

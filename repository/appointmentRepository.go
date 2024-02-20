@@ -8,6 +8,8 @@ import (
 )
 
 type AppointmentRepository interface {
+	Get(appointment *model.Appointment, id int)error
+	GetAll(appointments *[]model.Appointment, profileID int)error
 	Save(appointment *model.Appointment) error
 	SavePayment(payment *model.Payment) error
 	GetProfile(profile *model.Profile, profileID int) error
@@ -33,6 +35,14 @@ func (r *appointmentRepository) Save(appointment *model.Appointment) error {
 
 func (r *appointmentRepository) GetProfile(profile *model.Profile, profileID int) error {
 	return r.db.First(profile, profileID).Error
+}
+
+func (r *appointmentRepository) GetAll(appointments *[]model.Appointment, profileID int) error {
+	return r.db.Where("profile_id = ?", profileID).Find(appointments).Error
+}
+
+func (r *appointmentRepository) Get(appointment *model.Appointment, id int) error {
+	return r.db.First(appointment, id).Error
 }
 
 func (r *appointmentRepository) GetOnlineConsultation(consultation *model.OnlineConsultation, consultationID int) error {

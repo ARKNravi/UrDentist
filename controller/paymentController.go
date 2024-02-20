@@ -74,6 +74,33 @@ func (c *PaymentController) UpdatePayment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"payment": payment})
 }
 
+func (c *PaymentController) UpdatePaymentDummy(ctx *gin.Context) {
+	paymentID, err := strconv.Atoi(ctx.Param("paymentID"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment ID"})
+		return
+	}
+
+	var payment model.Payment
+	amount, _ := strconv.ParseFloat(ctx.PostForm("Amount"), 32)
+	payment.Amount = float32(amount)
+	payment.Status = true 
+	payment.Method = ctx.PostForm("Method")
+	appointmentID, _ := strconv.Atoi(ctx.PostForm("AppointmentID"))
+	payment.AppointmentID = uint(appointmentID)
+
+	payment.ID = uint(paymentID)
+	payment.Photo = "y"
+
+	if err := c.repo.Update(&payment); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the payment"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"payment": payment})
+}
+
+
 func uploadToGCS(data []byte, name string) (string, error) {
 	bucketName := "supple-hulling-408914.appspot.com"
 

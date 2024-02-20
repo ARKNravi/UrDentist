@@ -17,6 +17,6 @@ func PaymentRoutes(r *gin.Engine) {
 	}
 
 	controller := controller.NewPaymentController(repo)
-
+	r.PUT("/paymentsdummy/:paymentID", middleware.AuthMiddleware(), controller.UpdatePaymentDummy)
 	r.PUT("/payments/:paymentID", middleware.AuthMiddleware(), controller.UpdatePayment)
 }
