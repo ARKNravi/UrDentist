@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 
+	"cloud.google.com/go/storage"
 	"golang.org/x/oauth2/google"
 )
 
@@ -42,7 +43,26 @@ type Part struct {
 func getAccessToken() (string, error) {
 	ctx := context.Background()
 
-	creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to create new storage client: %w", err)
+	}
+
+	bucketName := os.Getenv("BUCKET_NAME")
+	objectName := os.Getenv("OBJECT_NAME")
+
+	rc, err := client.Bucket(bucketName).Object(objectName).NewReader(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get credentials file from GCS: %w", err)
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return "", fmt.Errorf("failed to read credentials file: %w", err)
+	}
+
+	creds, err := google.CredentialsFromJSON(ctx, data, os.Getenv("GOOGLE_AUTH_URL"))
 	if err != nil {
 		return "", err
 	}
@@ -55,7 +75,6 @@ func getAccessToken() (string, error) {
 
 	return token.AccessToken, nil
 }
-
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
@@ -83,29 +102,18 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		os.Mkdir("temp-images", 0755)
 	}
 
-	fileName := handler.Filename
-
-	tempFile, err := os.Create("temp-images/" + fileName)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer tempFile.Close()
-
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	tempFile.Write(fileBytes)
-
-	_, err = uploadToGCS(fileBytes, tempFile.Name())
+	
+	_, err = uploadToGCS(fileBytes, handler.Filename)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
-	gcsURI := fmt.Sprintf("gs://supple-hulling-408914.appspot.com/%s", strings.ReplaceAll(tempFile.Name(), "\\", "/"))
+	
+	gcsURI := fmt.Sprintf("gs://%s/%s", os.Getenv("BUCKET_NAME"), handler.Filename)
 	text := r.FormValue("text")
 	reqBody := &RequestBody{}
 	reqBody.Contents.Role = "user"
@@ -125,8 +133,8 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Print(gcsURI)
 
-	reqBody.SafetySettings.Category = "HARM_CATEGORY_SEXUALLY_EXPLICIT"
-	reqBody.SafetySettings.Threshold = "BLOCK_LOW_AND_ABOVE"
+	reqBody.SafetySettings.Category = os.Getenv("SAFETY_CATEGORY")
+	reqBody.SafetySettings.Threshold = os.Getenv("SAFETY_THRESHOLD")
 	reqBody.GenerationConfig.Temperature = 0.4
 	reqBody.GenerationConfig.TopP = 1.0
 	reqBody.GenerationConfig.TopK = 32
@@ -140,7 +148,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("POST", "https://us-central1-aiplatform.googleapis.com/v1/projects/supple-hulling-408914/locations/us-central1/publishers/google/models/gemini-1.0-pro-vision:streamGenerateContent", bytes.NewBuffer(jsonReqBody))
+	req, err := http.NewRequest("POST", os.Getenv("API_URL"), bytes.NewBuffer(jsonReqBody))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -155,12 +163,19 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer resp.Body.Close()
-
+	
+	if resp.StatusCode != http.StatusOK {
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("streamGenerateContent API call failed with status code %d and response body: %s\n", resp.StatusCode, string(bodyBytes))
+		return
+	}
+	
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	
 	
 	jsonResponse := make([]map[string]interface{}, 0)
 	
