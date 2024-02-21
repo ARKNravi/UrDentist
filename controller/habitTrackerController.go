@@ -151,7 +151,11 @@ func GetCompletedTasks(c *gin.Context) {
             }
 
             period := fmt.Sprintf("%s %d", getPeriodLabel(t), t.Year())
-            taskData[period] = result
+            taskData[period] = map[string]interface{}{
+                "DayCompleted": result["DayCompleted"].(int),
+                "TotalPoints": result["TotalPoints"].(int),
+                "completedTasks": result["completedTasks"].(int),
+            }
 
             if currentTime.After(midYear) && currentTime.Month() <= time.December {
   
@@ -164,7 +168,11 @@ func GetCompletedTasks(c *gin.Context) {
                 }
 
                 period := fmt.Sprintf("%s %d", getPeriodLabel(midYear), midYear.Year())
-                taskData[period] = result
+                taskData[period] = map[string]interface{}{
+                    "DayCompleted": result["DayCompleted"].(int),
+                    "TotalPoints": result["TotalPoints"].(int),
+                    "completedTasks": result["completedTasks"].(int),
+                }
             }
         }
 
@@ -176,8 +184,16 @@ func GetCompletedTasks(c *gin.Context) {
     var resultData []map[string]interface{}
     for period, data := range taskData {
         entry := make(map[string]interface{})
-        entry[period] = data
+        entry["periode"] = period
+        entry["DayCompleted"] = data["DayCompleted"]
+        entry["TotalPoints"] = data["TotalPoints"]
+        entry["completedTasks"] = data["completedTasks"]
         resultData = append(resultData, entry)
+    }
+
+    // Reverse the resultData to make it from the latest year and month
+    for i, j := 0, len(resultData)-1; i < j; i, j = i+1, j-1 {
+        resultData[i], resultData[j] = resultData[j], resultData[i]
     }
 
     if len(resultData) == 0 {
@@ -201,6 +217,7 @@ func min(a, b int) int {
     }
     return b
 }
+
 
 
 

@@ -88,17 +88,17 @@ func (c *PaymentController) UpdatePaymentDummy(ctx *gin.Context) {
 	payment.Method = ctx.PostForm("Method")
 	appointmentID, _ := strconv.Atoi(ctx.PostForm("AppointmentID"))
 	payment.AppointmentID = uint(appointmentID)
-
+	
 	payment.ID = uint(paymentID)
 	payment.Photo = "y"
-
+	
 	if err := c.repo.Update(&payment); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the payment"})
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{"payment": payment})
-}
+	
+	ctx.JSON(http.StatusOK, gin.H{"message": "payment successfully"})
+}	
 
 
 func uploadToGCS(data []byte, name string) (string, error) {
