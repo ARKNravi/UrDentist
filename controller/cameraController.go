@@ -113,7 +113,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-	gcsURI := fmt.Sprintf("gs://%s/%s", os.Getenv("BUCKET_NAME"), handler.Filename)
+	gcsURI := fmt.Sprintf("gs://supple-hulling-408914.appspot.com/%s", handler.Filename)
 	text := r.FormValue("text")
 	reqBody := &RequestBody{}
 	reqBody.Contents.Role = "user"
@@ -133,8 +133,8 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Print(gcsURI)
 
-	reqBody.SafetySettings.Category = os.Getenv("SAFETY_CATEGORY")
-	reqBody.SafetySettings.Threshold = os.Getenv("SAFETY_THRESHOLD")
+	reqBody.SafetySettings.Category = "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+	reqBody.SafetySettings.Threshold = "BLOCK_LOW_AND_ABOVE"
 	reqBody.GenerationConfig.Temperature = 0.4
 	reqBody.GenerationConfig.TopP = 1.0
 	reqBody.GenerationConfig.TopK = 32
@@ -148,7 +148,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("POST", os.Getenv("API_URL"), bytes.NewBuffer(jsonReqBody))
+	req, err := http.NewRequest("POST", "https://us-central1-aiplatform.googleapis.com/v1/projects/supple-hulling-408914/locations/us-central1/publishers/google/models/gemini-1.0-pro-vision:streamGenerateContent", bytes.NewBuffer(jsonReqBody))
 	if err != nil {
 		fmt.Println(err)
 		return
