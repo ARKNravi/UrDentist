@@ -145,6 +145,6 @@ func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the payment"})
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{"appointment": appointment, "payment": payment})
+	
+	ctx.JSON(http.StatusOK, gin.H{"id": payment.ID})
 }
