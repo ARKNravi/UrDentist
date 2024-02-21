@@ -2,12 +2,16 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
+
+	"golang.org/x/oauth2/google"
 )
 
 type RequestBody struct {
@@ -35,8 +39,32 @@ type Part struct {
 	Text string `json:"text,omitempty"`
 }
 
+func getAccessToken() (string, error) {
+	ctx := context.Background()
+
+	creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return "", err
+	}
+
+	tokenSource := creds.TokenSource
+	token, err := tokenSource.Token()
+	if err != nil {
+		return "", err
+	}
+
+	return token.AccessToken, nil
+}
+
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
+
+	accessToken, err := getAccessToken()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	r.ParseMultipartForm(10 << 20)
 
 	file, handler, err := r.FormFile("myFile")
@@ -78,7 +106,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	gcsURI := fmt.Sprintf("gs://supple-hulling-408914.appspot.com/%s", strings.ReplaceAll(tempFile.Name(), "\\", "/"))
-
+	text := r.FormValue("text")
 	reqBody := &RequestBody{}
 	reqBody.Contents.Role = "user"
 	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
@@ -92,7 +120,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 
 	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
-		Text: "I have had toothache in my right rear molar since yesterday. The pain feels like aching and throbbing, especially when I eat or drink something cold or hot. The pain also spread to my ears and jaw. When I checked my teeth, I found that there was a small hole in the affected part of the tooth. The hole measures about 1 millimeter.", 
+		Text: "how much percentage from  0% to 100% caries is that be precise only number no alphabet or symbol only number% and  " + text +"what to do when i have that much caries can you give me the solution and what to avoid", 
 	})
 
 	fmt.Print(gcsURI)
@@ -118,7 +146,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Header.Set("Authorization", "Bearer ya29.a0AfB_byBQOYsDF0TlyLJWuGXSflIlnBi8OEKnWEJQZv5Mdomg2c0PBolM48Gf-46Q2NNtzcoZQFfr3V3wQ1vqfe4IPw4B410QBAlArXCZ1F8N9NylKM6zX38wER4IPMJeuv_MojqDeCldtFeuCuiuXbEwgnsuuQ6cD0g6FxCD7ddYaCgYKAdoSARESFQHGX2Mit1RTvd5uAdngT2Vs45JN1Q0179")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := client.Do(req)
@@ -133,15 +161,42 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+	
+	jsonResponse := make([]map[string]interface{}, 0)
+	
+	err = json.Unmarshal(body, &jsonResponse)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	
+	var persenText, restText string
 
-jsonResponse := make([]interface{}, 0)
-
-err = json.Unmarshal(body, &jsonResponse)
-if err != nil {
-    fmt.Println(err)
-    return
-}
-w.Header().Set("Content-Type", "application/json")
-json.NewEncoder(w).Encode(jsonResponse)
-
+	for _, item := range jsonResponse {
+		candidates := item["candidates"].([]interface{})
+		for _, candidate := range candidates {
+			content := candidate.(map[string]interface{})["content"].(map[string]interface{})
+			parts := content["parts"].([]interface{})
+			for _, part := range parts {
+				text := part.(map[string]interface{})["text"].(string)
+				splitText := strings.SplitN(text, "\n", 2)
+				re := regexp.MustCompile(`(\d+%).*`)
+				matches := re.FindStringSubmatch(splitText[0])
+				if len(matches) > 1 {
+					persenText += matches[1] + " "
+				}
+				if len(splitText) > 1 {
+					restText += splitText[1] + " "
+				}
+			}
+		}
+	}
+	
+	responseData := make(map[string]string)
+	responseData["persen"] = persenText
+	responseData["text"] = restText
+	
+	w.Header().Set("Content-Type", "application/json")
+	
+	json.NewEncoder(w).Encode(responseData)
 }
