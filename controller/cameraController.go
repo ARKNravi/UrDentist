@@ -128,7 +128,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 
 	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
-		Text: "how much percentage from  0% to 100% caries is that be precise only number no alphabet or symbol only number% and  " + text +"what to do when i have that much caries can you give me the solution and what to avoid", 
+		Text: "how much percentage from  0% to 100% caries is my teeth from the picture be precise only number no alphabet or symbol only number% and  " + text +"what to solution to my teeth and what to avoid", 
 	})
 
 	fmt.Print(gcsURI)
