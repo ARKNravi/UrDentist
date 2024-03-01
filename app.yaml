@@ -1,1 +1,3 @@
 runtime: go120
+env_variables:
+    GOOGLE_APPLICATION_CREDENTIALS: "ravi.json"

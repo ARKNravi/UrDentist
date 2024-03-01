@@ -13,7 +13,6 @@ import (
 	"github.com/ARKNravi/HACKFEST-BE/model"
 	"github.com/ARKNravi/HACKFEST-BE/repository"
 	"github.com/gin-gonic/gin"
-	"google.golang.org/api/option"
 )
 
 type PaymentController struct {
@@ -106,7 +105,7 @@ func uploadToGCS(data []byte, name string) (string, error) {
 	bucketName := os.Getenv("BUCKET_NAME")
 
 	ctx := context.Background()
-	client, err := storage.NewClient(ctx, option.WithCredentialsFile("C:/Users/rkunt/Downloads/supple-hulling-408914-b6a57c3d0519.json"))
+	client, err := storage.NewClient(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to create new storage client: %w", err)
 	}
@@ -136,6 +135,5 @@ func uploadToGCS(data []byte, name string) (string, error) {
 
 	return u, nil
 }
-
 
 
