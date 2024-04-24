@@ -34,12 +34,8 @@ Here is the link
 
 1. [API-Specification](https://github.com/ARKNravi/hackfest-be/blob/main/api_urdentist.md)
 
-### 📷 Training Model 
-
-![image](https://github.com/ARKNravi/hackfest-be/assets/90196737/fdc5f124-bbe6-4e3a-841a-4264a01301c4)
-![image](https://github.com/ARKNravi/hackfest-be/assets/90196737/07996734-a3b9-4f27-ba2c-b797b72b54cf)
-![image](https://github.com/ARKNravi/hackfest-be/assets/90196737/30b6ed9a-e54f-4a7c-a3c9-27fb5563290f)
-![image](https://github.com/ARKNravi/hackfest-be/assets/90196737/e1646d1b-72cf-4dee-89f6-fae9aae1a445)
+### 📷 MODEL
+GEMINI AI
 
 
 ### 📁 File Structure
