@@ -92,7 +92,7 @@ func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 	appointment.PatientName = profile.NamaLengkap
 
 	var consultation interface{}
-	if *appointment.OnlineConsultationID != 0 {
+	if appointment.OnlineConsultationID != nil && *appointment.OnlineConsultationID != 0 {
 		var onlineConsultation model.OnlineConsultation
 		if err := c.repo.GetOnlineConsultation(&onlineConsultation, int(*appointment.OnlineConsultationID)); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get the online consultation: %v", err)})
@@ -101,7 +101,9 @@ func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 		consultation = onlineConsultation
 		appointment.OfflineConsultationID = nil  
 		appointment.DentistID = onlineConsultation.DentistID  
-	} else if *appointment.OfflineConsultationID != 0 {
+	}
+	
+	if appointment.OfflineConsultationID != nil && *appointment.OfflineConsultationID != 0 {
 		var offlineConsultation model.OfflineConsultation
 		if err := c.repo.GetOfflineConsultation(&offlineConsultation, int(*appointment.OfflineConsultationID)); err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to get the offline consultation: %v", err)})
@@ -110,9 +112,6 @@ func (c *AppointmentController) CreateAppointment(ctx *gin.Context) {
 		consultation = offlineConsultation
 		appointment.OnlineConsultationID = nil  
 		appointment.DentistID = offlineConsultation.DentistID  
-	} else {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Either OnlineConsultationID or OfflineConsultationID must be set"})
-		return
 	}
 	appointment.ProfileID = uint(profileID)
 	switch v := consultation.(type) {
