@@ -92,11 +92,6 @@ func UndoTask(c *gin.Context) {
         c.JSON(400, gin.H{"error": "Invalid profile ID"})
         return
     }
-    userID := uint(c.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to get these tasks"})
-        return
-    }
     taskIDStr := c.Param("taskID")
     taskID, err := strconv.ParseUint(taskIDStr, 10, 32)
     if err != nil {
@@ -104,15 +99,6 @@ func UndoTask(c *gin.Context) {
         return
     }
     repo := repository.NewTaskRepository()
-    task, err := repo.GetTaskByID(uint(taskID))
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-    if task.ProfileID != uint(profileID) {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to undo this task"})
-        return
-    }
     location, err := time.LoadLocation("Asia/Jakarta")
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
