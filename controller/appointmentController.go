@@ -18,6 +18,11 @@ func GetAppointment(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile ID"})
 		return
 	}
+	userID := uint(ctx.MustGet("userID").(float64))
+    if uint(profileID) != userID {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
+        return
+    }
 
 	appointmentID, err := strconv.Atoi(ctx.Param("appointmentID"))
 	if err != nil {
@@ -66,6 +71,12 @@ func CreateAppointment(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid dentist ID"})
 		return
 	}
+
+	userID := uint(ctx.MustGet("userID").(float64))
+    if uint(profileID) != userID {
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
+        return
+    }
 
 	var appointment model.Appointment
 	if err := ctx.ShouldBindJSON(&appointment); err != nil {
