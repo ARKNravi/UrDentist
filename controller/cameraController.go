@@ -127,7 +127,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 
 	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
-		Text: "Please analyze the image of my teeth and estimate the percentage of caries, ranging from 0% to 100%. Please provide the result as a precise number without any alphabets or symbols." + text +"Additionally, could you provide some solutions for improving my dental health and suggest what I should avoid to prevent further damage?", 
+		Text: "Based on the image provided, could you estimate the percentage (from 0% to 100%) of tooth decay or caries present? Please provide a precise numerical value without any alphabets or symbols. and my symtomp is " + text +"Additionally, could you provide some solutions for improving my dental health and suggest what I should avoid to prevent further damage?", 
 	})
 
 	fmt.Print(gcsURI)

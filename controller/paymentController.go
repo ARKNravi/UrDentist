@@ -15,15 +15,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PaymentController struct {
-	repo repository.PaymentRepository
-}
+var repo = repository.NewPaymentRepository()
 
-func NewPaymentController(repo repository.PaymentRepository) *PaymentController {
-	return &PaymentController{repo: repo}
-}
-
-func (c *PaymentController) UpdatePayment(ctx *gin.Context) {
+func UpdatePayment(ctx *gin.Context) {
 	paymentID, err := strconv.Atoi(ctx.Param("paymentID"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment ID"})
@@ -66,7 +60,7 @@ func (c *PaymentController) UpdatePayment(ctx *gin.Context) {
 	payment.ID = uint(paymentID)
 	payment.Photo = photoURL
 
-	if err := c.repo.Update(&payment); err != nil {
+	if err := repo.Update(&payment); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the payment"})
 		return
 	}
@@ -74,7 +68,7 @@ func (c *PaymentController) UpdatePayment(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"payment": payment})
 }
 
-func (c *PaymentController) UpdatePaymentDummy(ctx *gin.Context) {
+func UpdatePaymentDummy(ctx *gin.Context) {
 	paymentID, err := strconv.Atoi(ctx.Param("paymentID"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid payment ID"})
@@ -92,14 +86,13 @@ func (c *PaymentController) UpdatePaymentDummy(ctx *gin.Context) {
 	payment.ID = uint(paymentID)
 	payment.Photo = "y"
 	
-	if err := c.repo.Update(&payment); err != nil {
+	if err := repo.Update(&payment); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update the payment"})
 		return
 	}
 	
 	ctx.JSON(http.StatusOK, gin.H{"message": "payment successfully"})
 }	
-
 
 func uploadToGCS(data []byte, name string) (string, error) {
 	bucketName := os.Getenv("BUCKET_NAME")
@@ -135,5 +128,3 @@ func uploadToGCS(data []byte, name string) (string, error) {
 
 	return u, nil
 }
-
-

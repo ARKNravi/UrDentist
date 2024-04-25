@@ -10,7 +10,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func FindUserByEmail(email string) (*model.User, error) {
+type UserRepository struct {}
+
+func NewUserRepository() *UserRepository {
+	return &UserRepository{}
+}
+
+func (r *UserRepository) FindUserByEmail(email string) (*model.User, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return nil, err
@@ -24,7 +30,7 @@ func FindUserByEmail(email string) (*model.User, error) {
 	return &user, nil
 }
 
-func FindOrCreateUserByEmail(user *model.User) error {
+func (r *UserRepository) FindOrCreateUserByEmail(user *model.User) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -37,7 +43,7 @@ func FindOrCreateUserByEmail(user *model.User) error {
 	return nil
 }
 
-func FindUserByID(id string) (*model.User, error) {
+func (r *UserRepository) FindUserByID(id string) (*model.User, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return nil, err
@@ -49,7 +55,7 @@ func FindUserByID(id string) (*model.User, error) {
 	return &user, nil
 }
 
-func UpdateUser(user *model.User) error {
+func (r *UserRepository) UpdateUser(user *model.User) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -60,7 +66,7 @@ func UpdateUser(user *model.User) error {
 	return nil
 }
 
-func CreateTempUser(user *model.TempUser) error {
+func (r *UserRepository) CreateTempUser(user *model.TempUser) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -73,7 +79,7 @@ func CreateTempUser(user *model.TempUser) error {
 	return nil
 }
 
-func FindTempUserByCode(code string) (*model.TempUser, error) {
+func (r *UserRepository) FindTempUserByCode(code string) (*model.TempUser, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return nil, err
@@ -91,7 +97,7 @@ func FindTempUserByCode(code string) (*model.TempUser, error) {
 }
 
 
-func MoveUserToDB(tempUser *model.TempUser) error {
+func (r *UserRepository) MoveUserToDB(tempUser *model.TempUser) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -117,7 +123,7 @@ func MoveUserToDB(tempUser *model.TempUser) error {
 	return nil
 }
 
-func DeleteUnverifiedUsers(tenMinutesAgo time.Time) error {
+func (r *UserRepository) DeleteUnverifiedUsers(tenMinutesAgo time.Time) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err
@@ -131,7 +137,7 @@ func DeleteUnverifiedUsers(tenMinutesAgo time.Time) error {
 	return nil
 }
 
-func FindTempUserByEmail(email string) (*model.TempUser, error) {
+func (r *UserRepository) FindTempUserByEmail(email string) (*model.TempUser, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return nil, err
@@ -145,7 +151,7 @@ func FindTempUserByEmail(email string) (*model.TempUser, error) {
 	return &user, nil
 }
 
-func UpdateTempUser(user *model.TempUser) error {
+func (r *UserRepository) UpdateTempUser(user *model.TempUser) error {
 	db, err := database.Connect()
 	if err != nil {
 		return err

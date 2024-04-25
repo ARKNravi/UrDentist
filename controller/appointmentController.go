@@ -11,7 +11,7 @@ import (
 )
 
 type AppointmentController struct {
-	repo repository.AppointmentRepository
+	repo *repository.AppointmentRepository
 }
 
 func NewAppointmentController() (*AppointmentController, error) {

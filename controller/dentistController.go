@@ -40,21 +40,24 @@ func GetDentistByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
-	repo := repository.NewDentistRepository()
-	dentist, err := repo.GetDentistByID(uint(id))
+	repo, err := repository.NewAppointmentRepository()
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	DentistRepository:= repository.NewDentistRepository()
+	dentist, err := DentistRepository.GetDentistByID(uint(id))
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	offlineRepo := repository.NewOfflineConsultationRepository()
-	onlineRepo := repository.NewOnlineConsultationRepository()
-	offlineConsultations, err := offlineRepo.GetOfflineConsultationsByDentistID(dentist.ID)
+	offlineConsultations, err := repo.GetOfflineConsultationsByDentistID(dentist.ID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	onlineConsultations, err := onlineRepo.GetOnlineConsultationsByDentistID(dentist.ID)
+	onlineConsultations, err := repo.GetOnlineConsultationsByDentistID(dentist.ID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

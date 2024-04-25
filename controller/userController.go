@@ -81,7 +81,7 @@ func (UserController) Register(c *gin.Context) {
 	user.CreatedAt = time.Now().In(loc)
 
 	user.VerificationCode = generateVerificationCode()
-
+	repository := repository.NewUserRepository()
 	if err := repository.CreateTempUser(&user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -96,6 +96,7 @@ func (UserController) Register(c *gin.Context) {
 
 
 func DeleteUnverifiedUsers(tenMinutesAgo time.Time) {
+	repository := repository.NewUserRepository()
 	err := repository.DeleteUnverifiedUsers(tenMinutesAgo)
 	if err != nil {
 		log.Println("Error deleting unverified users:", err)
@@ -110,7 +111,7 @@ func (UserController) Verify(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	repository := repository.NewUserRepository()
 	user, err := repository.FindTempUserByCode(verificationRequest.Code)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -176,7 +177,7 @@ func (UserController) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	repository := repository.NewUserRepository()
 	user, err := repository.FindUserByEmail(loginInfo.EmailAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})
@@ -236,6 +237,7 @@ func (UserController) GoogleCallback(c *gin.Context) {
 		FullName:      name,
 		EmailAddress:  userInfo["email"].(string),
 	}
+	repository := repository.NewUserRepository()
 	if err := repository.FindOrCreateUserByEmail(user); err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -286,7 +288,7 @@ func (UserController) ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	repository := repository.NewUserRepository()
 	foundUser, err := repository.FindUserByEmail(request.EmailAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})
@@ -318,7 +320,7 @@ func (UserController) VerifyToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	repository := repository.NewUserRepository()
 	foundUser, err := repository.FindUserByEmail(request.EmailAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})
@@ -360,7 +362,7 @@ func (UserController) ResetPassword(c *gin.Context) {
 	}
 
 	email := c.MustGet("email").(string)
-
+	repository := repository.NewUserRepository()
 	foundUser, err := repository.FindUserByEmail(email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})
@@ -409,7 +411,7 @@ func (UserController) ShowProfile(c *gin.Context) {
 	}
 
 	userID := claims["userID"].(string)
-
+	repository := repository.NewUserRepository()
 	user, err := repository.FindUserByID(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})
@@ -427,7 +429,7 @@ func (UserController) ResendVerificationCode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
+	repository := repository.NewUserRepository()
 	user, err := repository.FindTempUserByEmail(request.EmailAddress)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error finding user"})

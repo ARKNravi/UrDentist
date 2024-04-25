@@ -1,4 +1,3 @@
-// repository/appointmentRepository.go
 package repository
 
 import (
@@ -7,84 +6,54 @@ import (
 	"gorm.io/gorm"
 )
 
-type AppointmentRepository interface {
-	Get(appointment *model.Appointment, id int)error
-	GetAll(appointments *[]model.Appointment, profileID int)error
-	Save(appointment *model.Appointment) error
-	SavePayment(payment *model.Payment) error
-	GetProfile(profile *model.Profile, profileID int) error
-	GetOnlineConsultation(consultation *model.OnlineConsultation, consultationID int) error
-	GetOfflineConsultation(consultation *model.OfflineConsultation, consultationID int) error
-}
-
-type appointmentRepository struct {
+type AppointmentRepository struct {
 	db *gorm.DB
 }
 
-func NewAppointmentRepository() (AppointmentRepository, error) {
+func NewAppointmentRepository() (*AppointmentRepository, error) {
 	db, err := database.Connect()
 	if err != nil {
 		return nil, err
 	}
-	return &appointmentRepository{db: db}, nil
+	return &AppointmentRepository{db: db}, nil
 }
 
-func (r *appointmentRepository) Save(appointment *model.Appointment) error {
+func (r *AppointmentRepository) Save(appointment *model.Appointment) error {
 	return r.db.Create(appointment).Error
 }
 
-func (r *appointmentRepository) GetProfile(profile *model.Profile, profileID int) error {
+func (r *AppointmentRepository) GetProfile(profile *model.Profile, profileID int) error {
 	return r.db.First(profile, profileID).Error
 }
 
-func (r *appointmentRepository) GetAll(appointments *[]model.Appointment, profileID int) error {
+func (r *AppointmentRepository) GetAll(appointments *[]model.Appointment, profileID int) error {
 	return r.db.Where("profile_id = ?", profileID).Find(appointments).Error
 }
 
-func (r *appointmentRepository) Get(appointment *model.Appointment, id int) error {
+func (r *AppointmentRepository) Get(appointment *model.Appointment, id int) error {
 	return r.db.First(appointment, id).Error
 }
 
-func (r *appointmentRepository) GetOnlineConsultation(consultation *model.OnlineConsultation, consultationID int) error {
+func (r *AppointmentRepository) GetOnlineConsultation(consultation *model.OnlineConsultation, consultationID int) error {
     return r.db.First(consultation, consultationID).Error
 }
 
-func (r *appointmentRepository) GetOfflineConsultation(consultation *model.OfflineConsultation, consultationID int) error {
+func (r *AppointmentRepository) GetOfflineConsultation(consultation *model.OfflineConsultation, consultationID int) error {
 	return r.db.First(consultation, consultationID).Error
 }
 
-func (r *appointmentRepository) SavePayment(payment *model.Payment) error {
+func (r *AppointmentRepository) SavePayment(payment *model.Payment) error {
 	return r.db.Create(payment).Error
 }
 
-type OfflineConsultationRepository struct {}
-
-func NewOfflineConsultationRepository() *OfflineConsultationRepository {
-	return &OfflineConsultationRepository{}
-}
-
-func (r *OfflineConsultationRepository) GetOfflineConsultationsByDentistID(dentistID uint) ([]model.OfflineConsultation, error) {
-	db, err := database.Connect()
-	if err != nil {
-		return nil, err
-	}
+func (r *AppointmentRepository) GetOfflineConsultationsByDentistID(dentistID uint) ([]model.OfflineConsultation, error) {
 	var consultations []model.OfflineConsultation
-	result := db.Where("dentist_id = ?", dentistID).Find(&consultations)
+	result := r.db.Where("dentist_id = ?", dentistID).Find(&consultations)
 	return consultations, result.Error
 }
 
-type OnlineConsultationRepository struct {}
-
-func NewOnlineConsultationRepository() *OnlineConsultationRepository {
-	return &OnlineConsultationRepository{}
-}
-
-func (r *OnlineConsultationRepository) GetOnlineConsultationsByDentistID(dentistID uint) ([]model.OnlineConsultation, error) {
-	db, err := database.Connect()
-	if err != nil {
-		return nil, err
-	}
+func (r *AppointmentRepository) GetOnlineConsultationsByDentistID(dentistID uint) ([]model.OnlineConsultation, error) {
 	var consultations []model.OnlineConsultation
-	result := db.Where("dentist_id = ?", dentistID).Find(&consultations)
+	result := r.db.Where("dentist_id = ?", dentistID).Find(&consultations)
 	return consultations, result.Error
 }
