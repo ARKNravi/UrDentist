@@ -77,7 +77,6 @@ func getAccessToken() (string, error) {
 }
 
 func HandleUpload(w http.ResponseWriter, r *http.Request) {
-
 	accessToken, err := getAccessToken()
 	if err != nil {
 		fmt.Println(err)
@@ -128,7 +127,7 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	})
 
 	reqBody.Contents.Parts = append(reqBody.Contents.Parts, &Part{
-		Text: "how much percentage from  0% to 100% caries is my teeth from the picture be precise only number no alphabet or symbol only number% and  " + text +"what to solution to my teeth and what to avoid", 
+		Text: "Please analyze the image of my teeth and estimate the percentage of caries, ranging from 0% to 100%. Please provide the result as a precise number without any alphabets or symbols." + text +"Additionally, could you provide some solutions for improving my dental health and suggest what I should avoid to prevent further damage?", 
 	})
 
 	fmt.Print(gcsURI)
@@ -186,25 +185,37 @@ func HandleUpload(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	var persenText, restText string
+	var attempts int
 
-	for _, item := range jsonResponse {
-		candidates := item["candidates"].([]interface{})
-		for _, candidate := range candidates {
-			content := candidate.(map[string]interface{})["content"].(map[string]interface{})
-			parts := content["parts"].([]interface{})
-			for _, part := range parts {
-				text := part.(map[string]interface{})["text"].(string)
-				splitText := strings.SplitN(text, "\n", 2)
-				re := regexp.MustCompile(`(\d+%).*`)
-				matches := re.FindStringSubmatch(splitText[0])
-				if len(matches) > 1 {
-					persenText += matches[1] + " "
-				}
-				if len(splitText) > 1 {
-					restText += splitText[1] + " "
+	for attempts = 0; attempts < 5; attempts++ {
+		for _, item := range jsonResponse {
+			candidates := item["candidates"].([]interface{})
+			for _, candidate := range candidates {
+				content := candidate.(map[string]interface{})["content"].(map[string]interface{})
+				parts := content["parts"].([]interface{})
+				for _, part := range parts {
+					text := part.(map[string]interface{})["text"].(string)
+					splitText := strings.SplitN(text, "\n", 2)
+					re := regexp.MustCompile(`(\d+%).*`)
+					matches := re.FindStringSubmatch(splitText[0])
+					if len(matches) > 1 {
+						persenText += matches[1] + " "
+					}
+					if len(splitText) > 1 {
+						restText += splitText[1] + " "
+					}
 				}
 			}
 		}
+
+		if persenText != "" && restText != "" {
+			break
+		}
+	}
+
+	if attempts == 3 {
+		fmt.Println("Failed to get non-empty persenText and restText after 5 attempts")
+		return
 	}
 	
 	responseData := make(map[string]string)
