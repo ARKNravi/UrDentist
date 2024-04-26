@@ -21,19 +21,28 @@ func CreateQuestion(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
-        return
-    }
-    question.ProfileID = uint(profileID)
     repo := repository.NewQuestionRepository()
-    err = repo.CreateQuestion(&question)
+    profileRepo := repository.NewProfileRepository()
+
+    profile, err := profileRepo.GetProfile(uint(profileID))
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
-    c.JSON(200, gin.H{"message": "Question created successfully"})
+
+    if profile.UserID == userID {
+        question.ProfileID = uint(profileID)
+        err = repo.CreateQuestion(&question)
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(200, gin.H{"message": "Question created successfully"})
+        return
+    }
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
 }
+
 
 func GetAllQuestions(c *gin.Context) {
 	repo := repository.NewQuestionRepository()
