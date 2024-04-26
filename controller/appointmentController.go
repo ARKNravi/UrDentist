@@ -13,36 +13,45 @@ import (
 var AppointmentRepo, _ = repository.NewAppointmentRepository()
 
 func GetAppointment(ctx *gin.Context) {
-	profileID, err := strconv.Atoi(ctx.Param("profileID"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile ID"})
-		return
-	}
-	userID := uint(ctx.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
+    profileID, err := strconv.Atoi(ctx.Param("profileID"))
+    if err != nil {
+        ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid profile ID"})
+        return
+    }
+    userID := uint(ctx.MustGet("userID").(float64))
+    profileRepo := repository.NewProfileRepository()
+
+    profile, err := profileRepo.GetProfile(uint(profileID))
+    if err != nil {
+        ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-	appointmentID, err := strconv.Atoi(ctx.Param("appointmentID"))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appointment ID"})
-		return
-	}
+    if profile.UserID == userID {
+        appointmentID, err := strconv.Atoi(ctx.Param("appointmentID"))
+        if err != nil {
+            ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid appointment ID"})
+            return
+        }
 
-	var appointment model.Appointment
-	if err := AppointmentRepo.Get(&appointment, appointmentID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get the appointment"})
-		return
-	}
+        var appointment model.Appointment
+        if err := AppointmentRepo.Get(&appointment, appointmentID); err != nil {
+            ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get the appointment"})
+            return
+        }
 
-	if appointment.ProfileID != uint(profileID) {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "Profile ID does not match the appointment"})
-		return
-	}
+        if appointment.ProfileID != uint(profileID) {
+            ctx.JSON(http.StatusForbidden, gin.H{"error": "Profile ID does not match the appointment"})
+            return
+        }
 
-	ctx.JSON(http.StatusOK, gin.H{"appointment": appointment})
+        ctx.JSON(http.StatusOK, gin.H{"appointment": appointment})
+        return
+    }
+
+    ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to access this appointment"})
 }
+
 
 func GetAllAppointments(ctx *gin.Context) {
 	profileID, err := strconv.Atoi(ctx.Param("profileID"))
@@ -51,14 +60,39 @@ func GetAllAppointments(ctx *gin.Context) {
 		return
 	}
 
-	var appointments []model.Appointment
-	if err := AppointmentRepo.GetAll(&appointments, profileID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get all appointments"})
+	userID := uint(ctx.MustGet("userID").(float64))
+	profileRepo := repository.NewProfileRepository()
+
+	profile, err := profileRepo.GetProfile(uint(profileID))
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	if profile.UserID != userID {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
+		return
+	}
+
+	var profiles []model.Profile
+	if err := AppointmentRepo.GetProfilesByUserID(&profiles, userID); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get profiles"})
+		return
+	}
+
+	var appointments []model.Appointment
+	for _, profile := range profiles {
+		var profileAppointments []model.Appointment
+		if err := AppointmentRepo.GetAll(&profileAppointments, int(profile.ID)); err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get all appointments"})
+			return
+		}
+		appointments = append(appointments, profileAppointments...)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"appointments": appointments})
 }
+
 
 func CreateAppointment(ctx *gin.Context) {
 	profileID, err := strconv.Atoi(ctx.Param("profileID"))
@@ -67,30 +101,25 @@ func CreateAppointment(ctx *gin.Context) {
 		return
 	}
 
+	userID := uint(ctx.MustGet("userID").(float64))
+	profileRepo := repository.NewProfileRepository()
+
+	profile, err := profileRepo.GetProfile(uint(profileID))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid dentist ID"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	userID := uint(ctx.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
-        return
-    }
+	if profile.UserID != userID {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
+		return
+	}
 
 	var appointment model.Appointment
 	if err := ctx.ShouldBindJSON(&appointment); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	var profile model.Profile
-	if err := AppointmentRepo.GetProfile(&profile, profileID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get the profile"})
-		return
-	}
-
-	appointment.PatientName = profile.NamaLengkap
 
 	var consultation interface{}
 	if appointment.OnlineConsultationID != nil && *appointment.OnlineConsultationID != 0 {
@@ -135,16 +164,16 @@ func CreateAppointment(ctx *gin.Context) {
 	}
 
 	payment := model.Payment{
-		Amount:        appointment.TotalPrice * 1.05, 
-		Status:        false,         
-		Method:        "",         
-		AppointmentID: appointment.ID, 
+		Amount:        appointment.TotalPrice * 1.05,
+		Status:        false,
+		Method:        "",
+		AppointmentID: appointment.ID,
 	}
 
 	if err := AppointmentRepo.SavePayment(&payment); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the payment"})
 		return
 	}
-	
+
 	ctx.JSON(http.StatusOK, gin.H{"id": payment.ID})
 }
