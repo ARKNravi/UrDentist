@@ -20,7 +20,7 @@ func GetAppointment(ctx *gin.Context) {
 	}
 	userID := uint(ctx.MustGet("userID").(float64))
     if uint(profileID) != userID {
-        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
         return
     }
 
@@ -74,7 +74,7 @@ func CreateAppointment(ctx *gin.Context) {
 
 	userID := uint(ctx.MustGet("userID").(float64))
     if uint(profileID) != userID {
-        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to create a question for this profile"})
+        ctx.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized"})
         return
     }
 
