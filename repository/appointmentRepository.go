@@ -57,3 +57,7 @@ func (r *AppointmentRepository) GetOnlineConsultationsByDentistID(dentistID uint
 	result := r.db.Where("dentist_id = ?", dentistID).Find(&consultations)
 	return consultations, result.Error
 }
+func (r *AppointmentRepository) GetProfilesByUserID(profiles *[]model.Profile, userID uint) error {
+	return r.db.Where("user_id = ?", userID).Find(profiles).Error
+}
+
