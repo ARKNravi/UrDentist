@@ -18,30 +18,27 @@ func CompleteTask(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to complete this task"})
-        return
-    }
-    taskIDStr := c.Param("taskID")
-    taskID, err := strconv.ParseUint(taskIDStr, 10, 32)
-    if err != nil {
-        c.JSON(400, gin.H{"error": "Invalid task ID"})
-        return
-    }
     repo := repository.NewTaskRepository()
-    location, err := time.LoadLocation("Asia/Jakarta")
+
+    profile, err := repo.GetProfile(uint(profileID))
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
-    currentTime := time.Now().In(location)
-    err = repo.CompleteTask(uint(profileID), uint(taskID), &currentTime)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
+
+    if profile.UserID == userID {
+        c.JSON(200, gin.H{"message": "Task completed successfully"})
         return
     }
-    c.JSON(200, gin.H{"message": "Task completed successfully"})
+
+    if profile.CreatedAt == profile.UpdatedAt && profile.UserID == userID {
+        c.JSON(200, gin.H{"message": "Task completed successfully"})
+        return
+    }
+
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to complete this task"})
 }
+
 
 func GetTasksByDate(c *gin.Context) {
     profileIDStr := c.Param("profileID")
@@ -51,39 +48,49 @@ func GetTasksByDate(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to get these tasks"})
-        return
-    }
-    dateStr := c.Query("date")
-    date, err := time.Parse("2006-01-02", dateStr)
-    if err != nil {
-        c.JSON(400, gin.H{"error": "Invalid date format, use YYYY-MM-DD"})
-        return
-    }
     repo := repository.NewTaskRepository()
-    tasks, err := repo.GetTasksByDate(uint(profileID), &date)
+
+    profile, err := repo.GetProfile(uint(profileID))
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
 
-    var response []map[string]interface{}
-    for _, task := range tasks {
-        item := map[string]interface{}{
-            "Task ID":    task.TaskID,
-            "Profile ID": task.ProfileID,
-            "Bulan":      task.Date.Month(),
-            "Tanggal":    task.Date.Day(),
-            "Tahun":      task.Date.Year(),
-            "Nama":  task.Task.Name,
-            "Status": task.Completed,
+    if profile.UserID == userID {
+        dateStr := c.Query("date")
+        date, err := time.Parse("2006-01-02", dateStr)
+        if err != nil {
+            c.JSON(400, gin.H{"error": "Invalid date format, use YYYY-MM-DD"})
+            return
         }
-        response = append(response, item)
+
+        tasks, err := repo.GetTasksByDate(uint(profileID), &date)
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+
+        var response []map[string]interface{}
+        for _, task := range tasks {
+            item := map[string]interface{}{
+                "Task ID":    task.TaskID,
+                "Profile ID": task.ProfileID,
+                "Bulan":      task.Date.Month(),
+                "Tanggal":    task.Date.Day(),
+                "Tahun":      task.Date.Year(),
+                "Nama":       task.Task.Name,
+                "Status":     task.Completed,
+            }
+            response = append(response, item)
+        }
+
+        c.JSON(200, response)
+        return
     }
 
-    c.JSON(200, response)
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to get these tasks"})
 }
+
 
 func UndoTask(c *gin.Context) {
     profileIDStr := c.Param("profileID")
@@ -132,20 +139,17 @@ func GetCompletedTasks(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if uint(profileID) != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to get these tasks"})
-        return
-    }
-
     repo := repository.NewTaskRepository()
+
     profile, err := repo.GetProfile(uint(profileID))
     if err != nil {
         c.JSON(500, gin.H{"error": err.Error()})
         return
     }
 
-    currentTime := time.Now()
-    startYear := min(currentTime.Year(), profile.CreatedAt.Year())
+    if profile.UserID == userID {
+        currentTime := time.Now()
+        startYear := min(currentTime.Year(), profile.CreatedAt.Year())
 
     taskData := make(map[string]map[string]interface{})
 
@@ -174,7 +178,7 @@ func GetCompletedTasks(c *gin.Context) {
             }
 
             if currentTime.After(midYear) && currentTime.Month() <= time.December {
-  
+
                 endOfYear := time.Date(t.Year(), time.December, 31, 23, 59, 59, 999999999, time.UTC)
 
                 result, err = repo.GetCompletedTasks(profile.ID, &midYear, &endOfYear)
@@ -207,7 +211,6 @@ func GetCompletedTasks(c *gin.Context) {
         resultData = append(resultData, entry)
     }
 
-    // Reverse the resultData to make it from the latest year and month
     for i, j := 0, len(resultData)-1; i < j; i, j = i+1, j-1 {
         resultData[i], resultData[j] = resultData[j], resultData[i]
     }
@@ -217,6 +220,10 @@ func GetCompletedTasks(c *gin.Context) {
     } else {
         c.JSON(200, gin.H{"data": resultData})
     }
+    return
+}
+
+c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to get these tasks"})
 }
 
 func getPeriodLabel(t time.Time) string {
