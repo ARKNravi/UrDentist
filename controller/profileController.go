@@ -51,12 +51,20 @@ func GetProfile(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if profile.UserID != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to view this profile"})
+
+    if profile.UserID == userID {
+        c.JSON(200, profile)
         return
     }
-    c.JSON(200, profile)
+
+    if profile.CreatedAt == profile.UpdatedAt && profile.UserID == userID {
+        c.JSON(200, profile)
+        return
+    }
+
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to view this profile"})
 }
+
 
 func UpdateProfile(c *gin.Context) {
     id := c.Param("profileID")
@@ -72,22 +80,40 @@ func UpdateProfile(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if profile.UserID != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to update this profile"})
+
+    if profile.UserID == userID {
+        var updatedProfile model.Profile
+        if err := c.ShouldBindJSON(&updatedProfile); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+        err = repo.UpdateProfile(uint(idUint), &updatedProfile)
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(200, gin.H{"message": "Profile updated successfully"})
         return
     }
-    var updatedProfile model.Profile
-    if err := c.ShouldBindJSON(&updatedProfile); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+    if profile.CreatedAt == profile.UpdatedAt && profile.UserID == userID {
+        var updatedProfile model.Profile
+        if err := c.ShouldBindJSON(&updatedProfile); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+        err = repo.UpdateProfile(uint(idUint), &updatedProfile)
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(200, gin.H{"message": "Profile updated successfully"})
         return
     }
-    err = repo.UpdateProfile(uint(idUint), &updatedProfile)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-    c.JSON(200, gin.H{"message": "Profile updated successfully"})
+
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to update this profile"})
 }
+
 
 func DeleteProfile(c *gin.Context) {
     id := c.Param("profileID")
@@ -103,15 +129,28 @@ func DeleteProfile(c *gin.Context) {
         return
     }
     userID := uint(c.MustGet("userID").(float64))
-    if profile.UserID != userID {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to delete this profile"})
+
+    if profile.UserID == userID {
+        err = repo.DeleteProfile(uint(idUint))
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(200, gin.H{"message": "Profile deleted successfully"})
         return
     }
-    err = repo.DeleteProfile(uint(idUint))
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
+
+    if profile.CreatedAt == profile.UpdatedAt && profile.UserID == userID {
+        err = repo.DeleteProfile(uint(idUint))
+        if err != nil {
+            c.JSON(500, gin.H{"error": err.Error()})
+            return
+        }
+        c.JSON(200, gin.H{"message": "Profile deleted successfully"})
         return
     }
-    c.JSON(200, gin.H{"message": "Profile deleted successfully"})
+
+    c.JSON(http.StatusUnauthorized, gin.H{"error": "You are not authorized to delete this profile"})
 }
+
 
