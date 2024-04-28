@@ -59,7 +59,7 @@ type UserResponse struct {
 func (UserController) Register(c *gin.Context) {
 	var user model.TempUser
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "message": err.Error()})
 		return
 	}
 
@@ -83,9 +83,10 @@ func (UserController) Register(c *gin.Context) {
 	user.VerificationCode = generateVerificationCode()
 	repository := repository.NewUserRepository()
 	if err := repository.CreateTempUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user", "message": err.Error()})
 		return
 	}
+
 	if err := sendVerificationEmail(user.EmailAddress, user.VerificationCode); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error sending verification email"})
 		return
@@ -153,11 +154,49 @@ func sendVerificationEmail(email string, code string) error {
 		return fmt.Errorf("failed to load .env file: %v", err)
 	}
 
+	// Create a beautiful HTML email template
+	emailBody := `
+		<!DOCTYPE html>
+		<html>
+		<head>
+			<style>
+				body {
+					font-family: Arial, sans-serif;
+					background-color: #f9f9f9;
+					padding: 20px;
+				}
+				.container {
+					max-width: 600px;
+					margin: 0 auto;
+					background-color: #ffffff;
+					padding: 20px;
+					border-radius: 10px;
+					box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+				}
+				h1 {
+					color: #333;
+				}
+				p {
+					color: #666;
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<h1>Email Verification</h1>
+				<p>Thank you for registering! Your verification code is:</p>
+				<h2 style="color: #007bff;">` + code + `</h2>
+				<p>Please enter this code in the verification form to activate your account.</p>
+			</div>
+		</body>
+		</html>
+	`
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", os.Getenv("EMAIL"))
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "Email Verification")
-	m.SetBody("text/html", "Your verification code is: "+code)
+	m.SetBody("text/html", emailBody)
 
 	d := gomail.NewDialer("smtp.gmail.com", 587, os.Getenv("EMAIL"), os.Getenv("EMAIL_PASSWORD"))
 
@@ -438,6 +477,9 @@ func (UserController) ResendVerificationCode(c *gin.Context) {
 
 	user.VerificationCode = generateVerificationCode()
 
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	user.CreatedAt = time.Now().In(loc)
+
 	if err := repository.UpdateTempUser(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating user"})
 		return
@@ -450,6 +492,7 @@ func (UserController) ResendVerificationCode(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"status": "Verification email has been resent. Please verify your account within 10 minutes."})
 }
+
 
 
 
