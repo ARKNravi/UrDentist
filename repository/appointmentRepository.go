@@ -21,6 +21,13 @@ func NewAppointmentRepository() (*AppointmentRepository, error) {
 func (r *AppointmentRepository) Save(appointment *model.Appointment) error {
 	return r.db.Create(appointment).Error
 }
+func (ar *AppointmentRepository) FindByID(id uint) (model.Appointment, error) {
+	var appointment model.Appointment
+	if err := ar.db.First(&appointment, id).Error; err != nil {
+		return appointment, err
+	}
+	return appointment, nil
+}
 
 func (r *AppointmentRepository) GetProfile(profile *model.Profile, profileID int) error {
 	return r.db.First(profile, profileID).Error
