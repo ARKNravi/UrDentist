@@ -19,6 +19,7 @@ type Profile struct {
 	Ratings         []Rating `gorm:"foreignKey:ProfileID"`
 	Questions       []Question `gorm:"foreignKey:ProfileID"`
 	Appointment       []Appointment `gorm:"foreignKey:ProfileID"`
+	// Transactions []Transaction `gorm:"foreignKey:ProfileID"`
 }
 
 func (p *Profile) UnmarshalJSON(b []byte) error {
