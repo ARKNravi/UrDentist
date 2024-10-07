@@ -14,4 +14,5 @@ type Appointment struct {
 	WorkHour  string       `gorm:"type:varchar(100);not null"`
 	TotalPrice  float32 `gorm:"not null"`
 	ProfileID   uint
+	// Transactions   []Transaction `gorm:"foreignKey:AppointmentID"`
 }
